@@ -15,6 +15,10 @@ type Person struct {
 	Name string `json:"name"`
 }
 
+type Answer struct {
+	Message string `json:"message"`
+}
+
 func GetNames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
@@ -99,6 +103,49 @@ func CreateName(w http.ResponseWriter, r *http.Request) {
 	log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
 
 	json.NewEncoder(w).Encode(person)
+}
+
+func UpdateName(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+
+	var person Person
+	_ = json.NewDecoder(r.Body).Decode(&person)
+
+	params := mux.Vars(r)
+	person.ID = params["id"]
+
+	db := connectToDB()
+	defer db.Close()
+
+	stmt, err := db.Prepare("UPDATE users SET name =? where id=?")
+	checkError(err)
+	defer stmt.Close()
+
+	_, err = stmt.Exec(person.Name, person.ID)
+	checkError(err)
+
+	json.NewEncoder(w).Encode(person)
+}
+
+func DeleteName(w http.ResponseWriter, r *http.Request) {
+	w.Header().Set("Content-Type", "application/json")
+	params := mux.Vars(r)
+	id := params["id"]
+
+	db := connectToDB()
+	defer db.Close()
+
+	stmt, err := db.Prepare("DELETE FROM users where id=?")
+	checkError(err)
+	defer stmt.Close()
+
+	_, err = stmt.Exec(id)
+	checkError(err)
+
+	var answer Answer
+	answer.Message = "Name doesn't exist or you've deleted it"
+
+	json.NewEncoder(w).Encode(answer)
 }
 
 func connectToDB() *sql.DB {
