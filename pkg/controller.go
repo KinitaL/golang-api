@@ -4,25 +4,17 @@ import (
 	"database/sql"
 	"encoding/json"
 	"log"
+	"myrest-api/pkg/model"
 	"net/http"
 
 	_ "github.com/go-sql-driver/mysql"
 	"github.com/gorilla/mux"
 )
 
-type Person struct {
-	ID   string `json:"id"`
-	Name string `json:"name"`
-}
-
-type Answer struct {
-	Message string `json:"message"`
-}
-
 func GetNames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var people []Person
+	var people []model.Person
 
 	db := connectToDB()
 	defer db.Close()
@@ -37,7 +29,7 @@ func GetNames(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		/*rows.Next() что-то вроде foreach*/
-		var person Person
+		var person model.Person
 		err := rows.Scan(&person.ID, &person.Name)
 		/*rows.Scan() записывает из строки БД в переменные*/
 		checkError(err)
@@ -53,7 +45,7 @@ func GetNames(w http.ResponseWriter, r *http.Request) {
 func GetName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	var person Person
+	var person model.Person
 
 	db := connectToDB()
 	defer db.Close()
@@ -81,7 +73,7 @@ func GetName(w http.ResponseWriter, r *http.Request) {
 
 func CreateName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var person Person
+	var person model.Person
 	_ = json.NewDecoder(r.Body).Decode(&person)
 
 	db := connectToDB()
@@ -108,7 +100,7 @@ func CreateName(w http.ResponseWriter, r *http.Request) {
 func UpdateName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var person Person
+	var person model.Person
 	_ = json.NewDecoder(r.Body).Decode(&person)
 
 	params := mux.Vars(r)
@@ -142,7 +134,7 @@ func DeleteName(w http.ResponseWriter, r *http.Request) {
 	_, err = stmt.Exec(id)
 	checkError(err)
 
-	var answer Answer
+	var answer model.Answer
 	answer.Message = "Name doesn't exist or you've deleted it"
 
 	json.NewEncoder(w).Encode(answer)
