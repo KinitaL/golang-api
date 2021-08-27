@@ -14,12 +14,12 @@ import (
 func GetNames(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var people []model.Person
+	var stocks []model.Stock
 
 	db := connectToDB()
 	defer db.Close()
 
-	stmt, err := db.Prepare("select * from users")
+	stmt, err := db.Prepare("select * from stocks")
 	checkError(err)
 	defer stmt.Close()
 
@@ -29,28 +29,28 @@ func GetNames(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		/*rows.Next() что-то вроде foreach*/
-		var person model.Person
-		err := rows.Scan(&person.ID, &person.Name)
+		var stock model.Stock
+		err := rows.Scan(&stock.ID, &stock.Fullname, &stock.Shortname, &stock.Price)
 		/*rows.Scan() записывает из строки БД в переменные*/
 		checkError(err)
-		people = append(people, person)
+		stocks = append(stocks, stock)
 		//log.Println(person.ID, person.Name)
 	}
 	err = rows.Err()
 	checkError(err)
 
-	json.NewEncoder(w).Encode(people)
+	json.NewEncoder(w).Encode(stocks)
 }
 
 func GetName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 	params := mux.Vars(r)
-	var person model.Person
+	var stock model.Stock
 
 	db := connectToDB()
 	defer db.Close()
 
-	stmt, err := db.Prepare("select id, name from users where id = ?")
+	stmt, err := db.Prepare("select id, fullname, shortname, price from stocks where id = ?")
 	checkError(err)
 	defer stmt.Close()
 
@@ -60,7 +60,7 @@ func GetName(w http.ResponseWriter, r *http.Request) {
 
 	for rows.Next() {
 		/*rows.Next() что-то вроде foreach*/
-		err := rows.Scan(&person.ID, &person.Name)
+		err := rows.Scan(&stock.ID, &stock.Fullname, &stock.Shortname, &stock.Price)
 		/*rows.Scan() записывает из строки БД в переменные*/
 		checkError(err)
 		//log.Println(person.ID, person.Name)
@@ -68,22 +68,22 @@ func GetName(w http.ResponseWriter, r *http.Request) {
 	err = rows.Err()
 	checkError(err)
 
-	json.NewEncoder(w).Encode(person)
+	json.NewEncoder(w).Encode(stock)
 }
 
 func CreateName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
-	var person model.Person
-	_ = json.NewDecoder(r.Body).Decode(&person)
+	var stock model.Stock
+	_ = json.NewDecoder(r.Body).Decode(&stock)
 
 	db := connectToDB()
 	defer db.Close()
 
-	stmt, err := db.Prepare("INSERT INTO users(name) VALUES (?)")
+	stmt, err := db.Prepare("INSERT INTO stocks(fullname, shortname, price) VALUES (?, ?, ?)")
 	checkError(err)
 	defer stmt.Close()
 
-	res, err := stmt.Exec(person.Name)
+	res, err := stmt.Exec(stock.Fullname, stock.Shortname, stock.Price)
 	checkError(err)
 
 	lastId, err := res.LastInsertId()
@@ -94,29 +94,29 @@ func CreateName(w http.ResponseWriter, r *http.Request) {
 
 	log.Printf("ID = %d, affected = %d\n", lastId, rowCnt)
 
-	json.NewEncoder(w).Encode(person)
+	json.NewEncoder(w).Encode(stock)
 }
 
 func UpdateName(w http.ResponseWriter, r *http.Request) {
 	w.Header().Set("Content-Type", "application/json")
 
-	var person model.Person
-	_ = json.NewDecoder(r.Body).Decode(&person)
+	var stock model.Stock
+	_ = json.NewDecoder(r.Body).Decode(&stock)
 
 	params := mux.Vars(r)
-	person.ID = params["id"]
+	stock.ID = params["id"]
 
 	db := connectToDB()
 	defer db.Close()
 
-	stmt, err := db.Prepare("UPDATE users SET name =? where id=?")
+	stmt, err := db.Prepare("UPDATE stocks SET fullname=?, shortname=?, price=? where id=?")
 	checkError(err)
 	defer stmt.Close()
 
-	_, err = stmt.Exec(person.Name, person.ID)
+	_, err = stmt.Exec(stock.Fullname, stock.Shortname, stock.Price, stock.ID)
 	checkError(err)
 
-	json.NewEncoder(w).Encode(person)
+	json.NewEncoder(w).Encode(stock)
 }
 
 func DeleteName(w http.ResponseWriter, r *http.Request) {
@@ -127,7 +127,7 @@ func DeleteName(w http.ResponseWriter, r *http.Request) {
 	db := connectToDB()
 	defer db.Close()
 
-	stmt, err := db.Prepare("DELETE FROM users where id=?")
+	stmt, err := db.Prepare("DELETE FROM stocks where id=?")
 	checkError(err)
 	defer stmt.Close()
 
@@ -135,7 +135,7 @@ func DeleteName(w http.ResponseWriter, r *http.Request) {
 	checkError(err)
 
 	var answer model.Answer
-	answer.Message = "Name doesn't exist or you've deleted it"
+	answer.Message = "Stock doesn't exist or you've deleted it"
 
 	json.NewEncoder(w).Encode(answer)
 }

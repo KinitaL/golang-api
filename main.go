@@ -11,14 +11,18 @@ import (
 func main() {
 	router := mux.NewRouter()
 
-	amw := middleware.AuthenticationMiddleware{TokenUsers: make(map[string]string)}
-	amw.Populate()
+	amw := middleware.AuthenticationMiddleware{}
+
 	router.Use(amw.Middleware)
 
-	router.HandleFunc("/people", pkg.GetNames).Methods("GET")
-	router.HandleFunc("/people/{id}", pkg.GetName).Methods("GET")
-	router.HandleFunc("/people", pkg.CreateName).Methods("POST")
-	router.HandleFunc("/people/{id}", pkg.UpdateName).Methods("PUT")
-	router.HandleFunc("/people/{id}", pkg.DeleteName).Methods("DELETE")
+	router.HandleFunc("/register", pkg.Register).Methods("POST")
+	router.HandleFunc("/login", pkg.Login).Methods("POST")
+	router.HandleFunc("/logout", pkg.Logout).Methods("GET")
+
+	router.HandleFunc("/stocks", pkg.GetNames).Methods("GET")
+	router.HandleFunc("/stocks/{id}", pkg.GetName).Methods("GET")
+	router.HandleFunc("/stocks", pkg.CreateName).Methods("POST")
+	router.HandleFunc("/stocks/{id}", pkg.UpdateName).Methods("PUT")
+	router.HandleFunc("/stocks/{id}", pkg.DeleteName).Methods("DELETE")
 	http.ListenAndServe("localhost:8099", router)
 }

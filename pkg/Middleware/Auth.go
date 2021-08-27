@@ -1,31 +1,30 @@
 package middleware
 
 import (
-	"log"
+	"encoding/json"
+	"myrest-api/pkg/model"
 	"net/http"
+
+	_ "github.com/go-sql-driver/mysql"
 )
 
 type AuthenticationMiddleware struct {
-	TokenUsers map[string]string
-}
-
-func (amw *AuthenticationMiddleware) Populate() {
-	amw.TokenUsers["00000000"] = "admin"
-	amw.TokenUsers["aaaaaaaa"] = "userA"
-	amw.TokenUsers["05f717e5"] = "randomUser"
-	amw.TokenUsers["deadbeef"] = "user0"
 }
 
 func (amw *AuthenticationMiddleware) Middleware(next http.Handler) http.Handler {
 	return http.HandlerFunc(func(w http.ResponseWriter, r *http.Request) {
-		token := r.Header.Get("X-Session-Token")
-
-		if user, found := amw.TokenUsers[token]; found {
-			// Мы нашли токен в нашей карте
-			log.Printf("Authenticated user %s\n", user)
+		if r.URL.Path == "/register" || r.URL.Path == "/login" {
 			next.ServeHTTP(w, r)
 		} else {
-			http.Error(w, "Forbidden", http.StatusForbidden)
+
+			cookie, _ := r.Cookie("token")
+			if cookie.Value == "some_token_value" {
+				next.ServeHTTP(w, r)
+			} else {
+				var answer model.Answer
+				answer.Message = "Wrong token"
+				json.NewEncoder(w).Encode(answer)
+			}
 		}
 	})
 }
